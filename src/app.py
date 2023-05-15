@@ -84,6 +84,26 @@ def post_people():
     response_body = {"msg": "Person inserted successfully"}
     return jsonify(response_body), 200
 
+@app.route('/favorite/people/<int:people_id>', methods=['POST'])
+def add_favorite_people(people_id):
+    # Capturamos la informacion del request body y accedemos a planet_ud id
+ 
+    user = User.query.get(current_logged_user_id)
+
+    new_favorite = Favorite(user_id=current_logged_user_id, people_id=people_id)
+    db.session.add(new_favorite)
+    db.session.commit()
+
+    response_body = {
+        "msg": "Favorito agregado correctamente", 
+        "favorite": new_favorite.serialize()
+    }
+
+    return jsonify(response_body), 200
+
+
+
+
 
 
 
