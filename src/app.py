@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, People, Planet, Favorite
+from models import db, User, People, Planet, FavoritePlanet
 #from models import Person
 
 app = Flask(__name__)
@@ -70,36 +70,33 @@ def get_one_person(id):
 def post_people():
 
     # obtener los datos de la petición que están en formato JSON a un tipo de datos entendibles por pyton (a un diccionario). En principio, en esta petición, deberían enviarnos 3 campos: el nombre, la descripción del planeta y la población
-    data = request.get_json()
+    body = request.get_json()
+    print(body)
 
+    name = body['name']
+    gender = body['gender']
+    height = body['height']
+    mass = body['mass']
+    
+    
+    
     # creamos un nuevo objeto de tipo Planet
     
-    people = People(name=data['name'], gender=data['gender'], height=data['height'], mass=data['mass'])
+    people = People(name=name, gender=gender, height=height, mass=mass)
 
 
     # añadimos el planeta a la base de datos
     db.session.add(people)
     db.session.commit()
 
-    response_body = {"msg": "Person inserted successfully"}
+    response_body = {"msg": "Person inserted successfully. ID = " + str(people.id)}
     return jsonify(response_body), 200
 
-@app.route('/favorite/people/<int:people_id>', methods=['POST'])
-def add_favorite_people(people_id):
-    # Capturamos la informacion del request body y accedemos a planet_ud id
  
-    user = User.query.get(current_logged_user_id)
 
-    new_favorite = Favorite(user_id=current_logged_user_id, people_id=people_id)
-    db.session.add(new_favorite)
-    db.session.commit()
+    
 
-    response_body = {
-        "msg": "Favorito agregado correctamente", 
-        "favorite": new_favorite.serialize()
-    }
 
-    return jsonify(response_body), 200
 
 
 
@@ -142,51 +139,44 @@ def get_relation_planet_galaxy():
 
 @app.route('/planet', methods=['POST'])
 def post_planet():
+    # recuperamos el cuerpo de la petición POST y la guardamos en una variable. 
+    body = request.get_json()
+    print(body)
 
-    # obtener los datos de la petición que están en formato JSON a un tipo de datos entendibles por pyton (a un diccionario). En principio, en esta petición, deberían enviarnos 3 campos: el nombre, la descripción del planeta y la población
-    data = request.get_json()
+    # tenemos que recuperar cada propiedad del objeto body
+    # tenemos que crear una nueva instancia del modelo Planet, usando la información contenida en el body
+    # tenemos que añadir esta nueva instancia a la base de datos con db.session.add(new_planet) -> db.session.commit()
 
-    # creamos un nuevo objeto de tipo Planet
-    planet = Planet(name=data['name'], description=data['description'], population=data['population'])
-
-    # añadimos el planeta a la base de datos
+    name = body['name']
+    population = body['population']
+    description = body['description']
+    galaxy_id = body['galaxy_id']
+    planet = Planet(name=name, population=population, description=description, galaxy_id=galaxy_id)
     db.session.add(planet)
     db.session.commit()
 
-    response_body = {"msg": "Planet inserted successfully"}
-    return jsonify(response_body), 200
+    return jsonify({'msg': 'Planet inserted with id ' + str(planet.id)}), 200
 
-@app.route('/favorite/planet/<int:planet_id>', methods=['POST'])
-def add_favorite_planet(planet_id):
-    # Capturamos la informacion del request body y accedemos a planet_ud id
- 
-    user = User.query.get(current_logged_user_id)
+# [POST] /favorite/user/<int:user_id>/planet/<int:planet_id> Añade un nuevo planet favorito al usuario actual con el planet id = planet_id.
+@app.route('/favorite/user/<int:user_id>/planet/<int:planet_id>', methods=['POST'])
+def post_favorite_planet(user_id, planet_id):
+    
+    print("Aquí está el user " + str( user_id))
+    print("Aquí está el planeta  " + str(planet_id))
 
-    new_favorite = Favorite(user_id=current_logged_user_id, planet_id=planet_id)
-    db.session.add(new_favorite)
+    # primero, compruebo si el id user_id existe en la BBDD
+    # si no existe, le contesto al cliente, con un error
+
+    favorite_planet = FavoritePlanet(user_id=user_id, planet_id=planet_id)
+    db.session.add(favorite_planet)
     db.session.commit()
 
-    response_body = {
-        "msg": "Favorito agregado correctamente", 
-        "favorite": new_favorite.serialize()
-    }
-
-    return jsonify(response_body), 200
-
-
-@app.route('/users/favorites', methods=['GET'])
-def get_user_favorites():
+    return jsonify({'msg': 'Favorited planet  success ' + str(favorite_planet.insertion_date)}), 200
     
-    user = User.query.get(current_logged_user_id)
-    favorites = user.favorites
-    serialized_favorites = [f.serialize() for f in favorites]
 
-    response_body = {
-        "msg": f"Aqui tienes los favoritos de {user.email}",
-        "favorites": serialized_favorites
-    }
 
-    return jsonify(response_body), 200
+
+
 
   
 
