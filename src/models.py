@@ -68,6 +68,7 @@ class Planet(db.Model):
 
     def __repr__(self):
         return '<Planet %r>' % self.name
+    
 
     def serialize(self):
         return {
@@ -92,3 +93,14 @@ class FavoritePlanet(db.Model):
 
     def __repr__(self):
         return f'<Planet {self.user.email} likes {self.planet.planet_name} on date {self.insertion_date}>'
+    
+class FavoritePeople(db.Model):
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, primary_key=True)
+    people_id = db.Column(db.Integer, db.ForeignKey("people.id"), nullable=False, primary_key=True)
+    insertion_date = db.Column(db.Date, default=datetime.datetime.now())
+  
+    people = db.relationship('People', backref="favorite_people")
+    user = db.relationship('User', backref="favorite_people")
+
+    def __repr__(self):
+        return f'<People {self.user.email} likes {self.people.name} on date {self.insertion_date}>'    
